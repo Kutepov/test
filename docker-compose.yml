@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www/html
+      - ./docker/conf/nginx:/etc/nginx/conf.d
+      - ./docker/nginx/logs:/var/log/nginx/
+    networks:
+      - internal
+    links:
+      - php
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: yii2_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 3s
+      retries: 20
+    ports:
+      - 3306:3306
+    volumes:
+      - ./database:/var/lib/mysql
+    networks:
+      - internal
+  php:
+    build:
+      dockerfile: DockerfilePhp
+      context: ./
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - internal
+  php-console:
+    build:
+      dockerfile: Dockerfile
+      context: ./
+    volumes:
+      - ./:/var/www/html
+      - ./docker/conf/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    ports:
+      - 9001:9001
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      driver: default

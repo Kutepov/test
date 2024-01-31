@@ -1,0 +1,6 @@
+FROM yiisoftware/yii2-php:8.1-fpm
+
+RUN apt-get update
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+CMD ["php-fpm"]
